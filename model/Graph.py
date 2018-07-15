@@ -17,6 +17,9 @@ class Graph(object):
         file = open(file_path)
         i = 0
         for line in file:
+            # 如果以 # 开头则跳过
+            if line[0] is '#':
+                continue
             arr = line.split(split_by)
             from_id = int(arr[0])
             to_id = int(arr[1])

@@ -1,15 +1,21 @@
 from model.Graph import Graph as G
 import copy
 import sys
-sys.setrecursionlimit(1000000)
+import threading
+sys.setrecursionlimit(100000)
 __author__ = 'ZJM'
 __time__ = '2018/5/29 15:10'
 
 
 if __name__ == '__main__':
 
-    g = G('../data/Slashdot0811.txt', '	')
-    g.get_scc_byKosaraju()
+    g = G('../data/0811.txt')
+    # g.get_scc_byKosaraju()
+    threading.stack_size(200000000)
+    thread = threading.Thread(target=g.get_scc_byKosaraju())  # your_code是函数
+    thread.start()
+    print('11111')
+    # scc_list = g.get_scc_by_tarjan()
     condensationG = copy.deepcopy(g)
     condensationG.turn_to_condensation()
     condensationG.route_table(g)

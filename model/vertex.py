@@ -15,6 +15,10 @@ class Vertex(object):
         self.route_table = dict()  # 接入接出结点到SSC中其他结点的路由表
         self.in_connect = dict()
         self.out_connect = dict()
+        # Tarjan 算法中的搜索次序和最先访问祖先的记号
+        self.dfn = 0
+        self.low = 0
+        self.flag = 0   # 结点是否在栈中： 0 不在，1 在
 
     def __str__(self):
         s = 'Pointed: {'

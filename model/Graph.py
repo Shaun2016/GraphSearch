@@ -6,7 +6,7 @@ __time__ = '2018/5/29 14:58'
 
 
 class Graph(object):
-    def __init__(self, file_path='', split_by=''):
+    def __init__(self, file_path=''):
         self.vertex_ids = set()  # 图中结点 id 集
         self.vertices = dict()  # id-结点
         self.scc_dict = dict()  # SCC_id-SCC
@@ -14,46 +14,72 @@ class Graph(object):
         self.condensation_graph = None  # 压缩图
         if not file_path:
             return
-        file = open(file_path)
-        i = 0
-        for line in file:
-            # 如果以 # 开头则跳过
-            if line[0] is '#':
-                continue
-            arr = line.split(split_by)
-            from_id = int(arr[0])
-            to_id = int(arr[1])
-            if from_id == to_id:
-                continue
-            # 向图中结点 id 的 set 中添加 id
-            self.vertex_ids.add(from_id)
-            self.vertex_ids.add(to_id)
-            # 如果是第一次的结点创建并放进图的 vertices 中
-            if not self.vertices.get(from_id):
-                self.vertices[from_id] = Vertex(from_id)
-            if not self.vertices.get(to_id):
-                self.vertices[to_id] = Vertex(to_id)
-            # 建立边（结点之间的关系）
-            self.vertices.get(from_id).neighbors.add(to_id)
-            self.vertices.get(to_id).pointed.add(from_id)
-        file.close()
+        split_by = ''
+        with open(file_path) as file:
+            i = 0
+            for line in file:
+                if line[0] is '#':
+                    continue
+                split_by = self.get_splite_char(file.readline())
+                break
+        with open(file_path) as file:
+            print('...(' + split_by + ')...')
+            for line in file:
+                # 如果以 # 开头则跳过
+                if line[0] is '#':
+                    continue
+                arr = line.split(split_by)
+                from_id = int(arr[0])
+                to_id = int(arr[1])
+                if from_id == to_id:
+                    continue
+                # 向图中结点 id 的 set 中添加 id
+                self.vertex_ids.add(from_id)
+                self.vertex_ids.add(to_id)
+                # 如果是第一次的结点创建并放进图的 vertices 中
+                if not self.vertices.get(from_id):
+                    self.vertices[from_id] = Vertex(from_id)
+                if not self.vertices.get(to_id):
+                    self.vertices[to_id] = Vertex(to_id)
+                # 建立边（结点之间的关系）
+                self.vertices.get(from_id).neighbors.add(to_id)
+                self.vertices.get(to_id).pointed.add(from_id)
         print('The size of vertices in Origin Graph is: ' + str(len(self.vertex_ids)))
 
-    # 通过kosaraju算法求原图中所有强连通分量
+    # 找到每行数据的分隔符
+    def get_splite_char(self, line):
+        res = ''
+        for i in range(len(line)):
+            if '0' <= line[i] <= '9' or line[i] == '#':
+                continue
+            for j in range(i, len(line)):
+                if '0' <= line[j] <= '9' or line[j] == '#':
+                    break
+                res += line[j]
+            return res
+
+    # 通过 kosaraju 算法求原图中所有强连通分量
     def get_scc_byKosaraju(self):
-        visited = set()
+        visited = []
         stack = []
 
+        # 逆后续遍历
         def reverse_post_order_tra(i):
             if i in visited:
                 return
-            visited.add(i)
+            visited.append(i)
             for j in self.vertices.get(i).pointed:
                 reverse_post_order_tra(j)
-            stack.append(i)
-
-        for i in self.vertex_ids:
-            reverse_post_order_tra(i)
+            stack.append(i)     # 入栈
+        index = 0
+        try:
+            for index in self.vertex_ids:
+                print(index)
+                reverse_post_order_tra(index)
+        except RecursionError as e:
+            print('stack: ', stack)
+            print('visited', visited)
+            print('now number: ', index)
         print('Reverse Post-Order', end=': ')
         print(stack)
         visited = set()
@@ -66,8 +92,7 @@ class Graph(object):
                 dfs(j, scc)
             scc.append(m)
             return scc
-
-        while len(stack):
+        while stack:
             i = stack.pop()
             scc = dfs(i, [])
             if scc and len(scc) > 1:
@@ -79,6 +104,48 @@ class Graph(object):
         for item in self.scc_dict.values():
             print(item.vertex_ids)
         print('The size of SCC in Condensation Graph is: ' + str(len(self.scc_dict)))
+
+    # Tarjan 求原图的所有强连通分量
+    def get_scc_by_tarjan(self):
+        stack = []
+        # 标记：访问次序
+        num = 0
+        # 返回的结果: a list of SCC
+        res = []
+
+        # u: 要遍历的结点 id
+        def tarjan(u):
+            nonlocal num
+            vu = self.vertices.get(u)
+            vu.dfn = vu.low = num
+            num += 1
+            vu.flag = 1
+            stack.append(u)
+
+            for index in vu.neighbors:
+                vi = self.vertices.get(index)
+                if not vi.dfn:
+                    tarjan(index)
+                    if vi.low < vu.low:
+                        vu.low = vi.low
+                    continue
+                if vi.dfn < vu.low and vi.flag:
+                    vu.low = vi.dfn
+            # 回溯过程：如果发现 dfn == low 的结点，把该点之后的结点全部弹出，
+            # 作为一个SCC
+            scc = []
+            if vu.dfn is vu.low:
+                temp = stack.pop()
+                self.vertices.get(temp).flag = 0
+                while temp is not u:
+                    scc.append(temp)
+                    temp = stack.pop()
+                    self.vertices.get(temp).flag = 0
+                res.append(scc)
+            pass
+        tarjan(list(self.vertex_ids)[0])
+        return res
+        pass
 
     # 求压缩图
     def turn_to_condensation(self):

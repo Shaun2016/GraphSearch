@@ -72,16 +72,8 @@ class Graph(object):
                 reverse_post_order_tra(j)
             stack.append(i)     # 入栈
         index = 0
-        try:
-            for index in self.vertex_ids:
-                print(index)
-                reverse_post_order_tra(index)
-        except RecursionError as e:
-            print('stack: ', stack)
-            print('visited', visited)
-            print('now number: ', index)
-        print('Reverse Post-Order', end=': ')
-        print(stack)
+        for index in self.vertex_ids:
+            reverse_post_order_tra(index)
         visited = set()
 
         def dfs(m, scc):
@@ -110,22 +102,18 @@ class Graph(object):
         stack = []
         # 标记：访问次序
         num = 0
-        # 返回的结果: a list of SCC
-        res = []
 
         # u: 要遍历的结点 id
-        def tarjan(u):
+        def tarjan(vu):
             nonlocal num
-            vu = self.vertices.get(u)
             vu.dfn = vu.low = num
             num += 1
+            stack.append(vu.vid)
             vu.flag = 1
-            stack.append(u)
-
             for index in vu.neighbors:
                 vi = self.vertices.get(index)
                 if not vi.dfn:
-                    tarjan(index)
+                    tarjan(vi)
                     if vi.low < vu.low:
                         vu.low = vi.low
                     continue
@@ -135,16 +123,21 @@ class Graph(object):
             # 作为一个SCC
             scc = []
             if vu.dfn is vu.low:
+                vu.flag = 0
                 temp = stack.pop()
-                self.vertices.get(temp).flag = 0
-                while temp is not u:
-                    scc.append(temp)
+                scc.append(temp)
+                while temp is not vu.vid:
                     temp = stack.pop()
+                    scc.append(temp)
                     self.vertices.get(temp).flag = 0
-                res.append(scc)
+                print('scc: ', scc)
+                if len(scc) > 1:
+                    s = SCC(scc[0], set(scc))
+                    self.scc_dict[scc[0]] = s
+                    for v in scc:
+                        self.vertices.get(v).scc_id = scc[0]
             pass
-        tarjan(list(self.vertex_ids)[0])
-        return res
+        tarjan(self.vertices.get(list(self.vertex_ids)[0]))
         pass
 
     # 求压缩图
@@ -284,8 +277,7 @@ class Graph(object):
     # 显示图的点
     def show_graph(self):
         print('--------The vertices in graph:---------')
-        for vid, v in self.vertices.items():
-            print(vid, v.pointed, v.neighbors)
+        print(len(self.scc_dict))
 
     # 求两点的最短路径
     def get_shortest_path(self, origin_g, u, v):

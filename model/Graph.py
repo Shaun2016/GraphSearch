@@ -44,6 +44,8 @@ class Graph(object):
                 # 建立边（结点之间的关系）
                 self.vertices.get(from_id).neighbors.add(to_id)
                 self.vertices.get(to_id).pointed.add(from_id)
+                self.vertices.get(from_id).shortest_path_len[to_id] = 1
+                self.vertices.get(from_id).shortest_path_mid_point[to_id] = to_id
         print('The size of vertices in Origin Graph is: ' + str(len(self.vertex_ids)))
 
     # 找到每行数据的分隔符
@@ -88,6 +90,7 @@ class Graph(object):
             i = stack.pop()
             scc = dfs(i, [])
             if scc and len(scc) > 1:
+                print('scc: ', scc)
                 temp = SCC(scc[0], set(scc))
                 self.scc_dict[scc[0]] = temp
                 for v in scc:
@@ -277,7 +280,8 @@ class Graph(object):
     # 显示图的点
     def show_graph(self):
         print('--------The vertices in graph:---------')
-        print(len(self.scc_dict))
+        for k, v in self.vertices.items():
+            print(k, ': ', v)
 
     # 求两点的最短路径
     def get_shortest_path(self, origin_g, u, v):
@@ -332,5 +336,48 @@ class Graph(object):
             path_in_scc1 = self.vertices.get(out_point).route_table[u.vid][::-1]
             path_in_scc2 = self.vertices.get(in_point).route_table[v.vid]
             return path_in_scc1 + path1[:-1] + path_in_scc2
+
+    def floyed(self):
+        # k 为中间点
+        for k in self.vertices.values():
+            # i 为起点
+            for i in self.vertices.values():
+                # j 为终点
+                for j in self.vertices.values():
+                    if k.vid in i.shortest_path_len \
+                            and j.vid in k.shortest_path_len:
+                        temp_path = i.shortest_path_len.get(k.vid) + k.shortest_path_len.get(j.vid)
+                        if j.vid in i.shortest_path_len:
+                            if i.shortest_path_len.get(j.vid) > temp_path:
+                                i.shortest_path_len[j.vid] = temp_path
+                                i.shortest_path_mid_point[j.vid] = i.shortest_path_mid_point[k.vid]
+                        else:
+                            i.shortest_path_len[j.vid] = temp_path
+                            i.shortest_path_mid_point[j.vid] = i.shortest_path_mid_point[k.vid]
+
+    def backtrack_for_floyed(self, source, target):
+        s = self.vertices.get(source)
+        temp = s.shortest_path_mid_point.get(target)
+        if not temp:
+            return None
+        path = [temp]
+        while temp is not target:
+            temp = self.vertices.get(temp).shortest_path_mid_point.get(target)
+            if not temp:
+                return None
+            path.append(temp)
+        return path
+        pass
+
+
+
+
+
+
+
+
+
+
+
 
 

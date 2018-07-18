@@ -10,6 +10,17 @@ __time__ = '2018/5/29 15:10'
 if __name__ == '__main__':
 
     g = G('../data/0811.txt')
+    g.show_graph()
+    g.floyed()
+    for i in g.vertices.values():
+        print(i.vid, '_______________:')
+        for k, v in i.shortest_path_len.items():
+            print(k, ': ', v)
+        print('mid points：')
+        for k, v in i.shortest_path_mid_point.items():
+            print(k, ': ', v)
+    print(g.backtrack_for_floyed(11, 6))
+    '''
     # g.get_scc_byKosaraju()
     threading.stack_size(200000000)
     thread = threading.Thread(target=g.get_scc_byKosaraju)  # your_code是函数
@@ -25,4 +36,4 @@ if __name__ == '__main__':
     condensationG.travel(g)
     p = condensationG.get_shortest_path(g, 7, 11)
     print(p)
-
+'''
